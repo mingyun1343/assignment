@@ -101,7 +101,7 @@ def train():
     losses = []
     accuracies = []
 
-    if not LOAD_MODE:
+    if not LOAD_MODE:       # 是否训练
         # 已经迭代更新次数
         steps = 0
         running_loss = 0.0
@@ -220,7 +220,9 @@ if __name__ == '__main__':
     parser.add_argument('--eval_freq', type=int, default=EVAL_FREQ_DEFAULT,
                         help='Frequency of evaluation on the test set')
     parser.add_argument('--data_dir', type=str, default=DATA_DIR_DEFAULT,
-                        help='Directory for storing input data')
+                        help='Directory for storing input data'),
+    parser.add_argument('--load_model', type=str, default=LOAD_MODE,
+                        help='load model to predict')
     FLAGS, unparsed = parser.parse_known_args()
 
     main()
