@@ -1,10 +1,10 @@
 # Assignment
 
 ## 目录
-* [使用代码](https://github.com/mingyun1343/assignment/edit/main/README.md#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%A0%81)
-* [运行环境](https://github.com/mingyun1343/assignment/edit/main/README.md#%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83)
-* [运行结果](https://github.com/mingyun1343/assignment/edit/main/README.md#%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C)
-* [结果分析](https://github.com/mingyun1343/assignment/edit/main/README.md#%E7%BB%93%E6%9E%9C%E5%88%86%E6%9E%90)
+* [使用代码](#使用代码)
+* [运行环境](#运行环境)
+* [运行结果](#运行结果)
+* [结果分析](#结果分析)
 
 ## 使用代码
 上述文件中包含了所有训练数据和测试数据，也包含了使用默认参数训练的模型
