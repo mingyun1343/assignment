@@ -1,9 +1,10 @@
 # Assignment
 
 ## 目录
-* 使用代码
-* 运行环境
-* 运行结果
+* [使用代码](https://github.com/mingyun1343/assignment/edit/main/README.md#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%A0%81)
+* [运行环境](https://github.com/mingyun1343/assignment/edit/main/README.md#%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83)
+* [运行结果](https://github.com/mingyun1343/assignment/edit/main/README.md#%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C)
+* [结果分析](https://github.com/mingyun1343/assignment/edit/main/README.md#%E7%BB%93%E6%9E%9C%E5%88%86%E6%9E%90)
 
 ## 使用代码
 上述文件中包含了所有训练数据和测试数据，也包含了使用默认参数训练的模型
@@ -52,5 +53,21 @@ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvi
 ![图片](https://github.com/mingyun1343/assignment/raw/main/images/15000.png) 
 #### MAX_STEPS_DEFAULT=20000 && shuffle=False
 ![图片](https://github.com/mingyun1343/assignment/raw/main/images/20000.png) 
-#### 结果分析
+## 结果分析
+在默认参数下，可以看出最终的准确度约为75%
 
+可以看出，损失仍有明显下降的趋势，准确度仍有明显上升的趋势
+
+因此，我调整MAX_STEPS_DEFAULT超参，加大训练轮次，以求获得更好的结果
+
+在MAX_STEPS_DEFAULT=10000时，准确度确实有一定的提升，约为78%左右
+
+但随着MAX_STEPS_DEFAULT=15000，准确度提升很少，约为79%左右，因此我认为再继续训练会造成过拟合等问题（甚至已经出现）
+
+当MAX_STEPS_DEFAULT=20000，可以看出，准确度几乎没有上升，在79%波动，而损失函数却有一定程度的下降，可以认为出现了过拟合的现象
+
+此外，我也尝试将训练时的shuffle=False改为shuffle=True
+
+可以看出，虽然在准确度上的提升不是很大，但是两者的曲线对比可以看出，shuffle=True一组的曲线波动明显小，但波动更加频繁
+
+个人认为shuffle=True更加优异，增加了训练时的随机性，提高其泛化能力
