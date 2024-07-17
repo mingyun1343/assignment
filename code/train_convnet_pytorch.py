@@ -25,6 +25,7 @@ BATCH_SIZE_DEFAULT = 32
 MAX_STEPS_DEFAULT = 5000
 EVAL_FREQ_DEFAULT = 500
 OPTIMIZER_DEFAULT = 'ADAM'
+LOAD_MODE = True
 
 # Directory in which cifar data is saved
 DATA_DIR_DEFAULT = './cifar10'
@@ -54,8 +55,7 @@ def accuracy(predictions, targets):
     # PUT YOUR CODE HERE  #
     #######################
     predicted_classes = torch.argmax(predictions, dim=1)
-    true_classes = torch.argmax(targets, dim=1)
-    correct_predictions = torch.sum(predicted_classes == true_classes)
+    correct_predictions = torch.sum(predicted_classes == targets)
     accuracy = correct_predictions.float() / targets.size(0)
     ########################
     # END OF YOUR CODE    #
@@ -79,55 +79,108 @@ def train():
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    transform = transforms.Compose([
+    transform = transforms.Compose([            # 图像变换
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
+    # 数据读入
+    trainset = torchvision.datasets.CIFAR10(root=DATA_DIR_DEFAULT, train=True, download=False, transform=transform)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE_DEFAULT, shuffle=True, num_workers=2)
+    testset = torchvision.datasets.CIFAR10(root=DATA_DIR_DEFAULT, train=False, download=False, transform=transform)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE_DEFAULT, shuffle=False, num_workers=2)
 
-    # 加载训练数据集
-    trainset = torchvision.datasets.CIFAR10(root=DATA_DIR_DEFAULT, train=True,
-                                            download=False, transform=transform)
+    # cpu/gpu，获取模型
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = ConvNet(3, 10).to(device)
 
-    # 创建训练数据加载器
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
-                                              shuffle=True, num_workers=2)
-
-    # 加载测试数据集
-    testset = torchvision.datasets.CIFAR10(root=DATA_DIR_DEFAULT, train=False,
-                                           download=False, transform=transform)
-
-    # 创建测试数据加载器
-    testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                             shuffle=False, num_workers=2)
-    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    model = ConvNet(3,10)  # 替换为你的模型
+    # 交叉熵损失函数，Adam优化器
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE_DEFAULT)
 
-    for epoch in range(2):  # 训练两个周期
+    # 损失和准确率
+    losses = []
+    accuracies = []
+
+    if not LOAD_MODE:
+        # 已经迭代更新次数
+        steps = 0
         running_loss = 0.0
-        for i, data in enumerate(trainloader, 0):
-            # 获取输入；数据是一个[inputs, labels]列表
-            inputs, labels = data
+        while steps < MAX_STEPS_DEFAULT:    # 达到设定的次数即截止
 
-            # 清零参数梯度
-            optimizer.zero_grad()
-            # print(inputs.shape)
-            # 正向传播，反向传播，优化
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            for i, data in enumerate(trainloader, 0):
+                steps = steps + 1
+                if steps >= MAX_STEPS_DEFAULT:
+                    break
+                inputs, labels = data[0].to(device), data[1].to(device)
 
-            # 打印统计信息
-            running_loss += loss.item()
-            if i % 2000 == 1999:  # 每2000个批次打印一次
-                print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
-                running_loss = 0.0
-    # digit = trainloader.dataset.data[0]
-    # plt.imshow(digit, cmap=plt.cm.binary)
-    # plt.show()
-    # print(classes[trainloader.dataset.targets[0]])
+                optimizer.zero_grad()
+                outputs = model(inputs)             # 结果
+                loss = criterion(outputs, labels)   # 损失
+                loss.backward()                     # 反向传播
+                optimizer.step()
+
+                running_loss += loss.item()
+                if (steps + 1) % EVAL_FREQ_DEFAULT == 0:    # 达到特定次数计算准确度并加入损失
+
+                    model.eval()
+                    with torch.no_grad():
+                        correct = 0
+                        total = 0
+                        for data in testloader:
+                            images, labels = data
+                            images, labels = images.to(device), labels.to(device)
+                            outputs = model(images)
+                            _, predicted = torch.max(outputs.data, 1)
+                            total += labels.size(0)
+                            correct += (predicted == labels).sum().item()
+                        accuracy = 100 * correct / total
+                        accuracies.append(accuracy)         # 加入历史
+                    model.train()
+
+                    loss = running_loss / 500
+                    running_loss = 0
+                    losses.append(loss)             # 加入历史
+
+        # 绘制精准度和损失曲线图
+        line = np.arange(EVAL_FREQ_DEFAULT,MAX_STEPS_DEFAULT+EVAL_FREQ_DEFAULT,EVAL_FREQ_DEFAULT)
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        plt.plot(line,losses, label='Loss')
+        plt.xlabel('Steps')
+        plt.ylabel('Loss')
+        plt.legend()
+
+        plt.subplot(1, 2, 2)
+        plt.plot(line,accuracies, label='Accuracy')
+        plt.xlabel('Steps')
+        plt.ylabel('Accuracy (%)')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+        # 保存模型
+        torch.save(model.state_dict(), "../model/model.pth")
+
+    # 加载模型
+    if torch.cuda.is_available():
+        model.load_state_dict(torch.load("../model/model.pth"))
+    else:
+        model.load_state_dict(torch.load("../model/model.pth", map_location=torch.device('cpu')))
+    # 计算最终模型的准确度
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in testloader:
+            images, labels = data[0].to(device), data[1].to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    accuracy = 100 * correct / total
+    print("Accuracy=",accuracy)
+
     ########################
     # END OF YOUR CODE    #
     #######################

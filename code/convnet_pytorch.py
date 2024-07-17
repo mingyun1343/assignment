@@ -99,14 +99,3 @@ class ConvNet(nn.Module):
 
         return out
 
-
-# if __name__ == '__main__':
-#   random_data = np.random.rand(2, 3, 32, 32)  # 调整数据形状为 (batch_size, channels, height, width)
-#   random_data_tensor = torch.from_numpy(random_data.astype(np.float32))  # 将NumPy数组转换为PyTorch的Tensor类型，并确保数据类型为float32
-#   print("输入数据的数据维度", random_data_tensor.size())  # 检查数据形状是否正确
-#
-#   # 创建VGG16网络实例
-#   model = ConvNet(3,10)
-#   output = model(random_data_tensor)
-#   print("输出数据维度", output.shape)
-#   print(output)
